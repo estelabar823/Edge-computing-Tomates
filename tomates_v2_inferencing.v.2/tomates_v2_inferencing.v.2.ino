@@ -5,33 +5,8 @@
 #include "edge-impulse-sdk/dsp/image/image.hpp"
 #include "esp_camera.h"
 
-/* 
-//Fast LED
-#define FASTLED_INTERNAL //Nuevo
-#define FASTLED_NOISE_ALLOW_AVERAGE 0 //Nuevo
-#define FASTLED_NOISE_ALLOW_BEST 0 //Nuevo
-#define FASTLED_NOISE_ALLOW_SIMPLEX 0 //Nuevo
-#include <FastLED.h> //Inicial
-
-// LED configuration
-//#define LED_PIN     4        // Cambia si hace falta //Inicial
-#define LED_PIN     2 //Nuevo
-#define LED_COUNT   1
-CRGB leds[LED_COUNT];
-*/
-
-//NeoPixelBus
-//#include <NeoPixelBus.h>
-
-//#define LED_PIN 2 //Nuevo v.1
-#define LED_PIN 13 //Nuevo v.2
+#define LED_PIN 13 
 #define LED_COUNT 1
-
-//NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(LED_COUNT); //"Inicial"
-//NeoPixelBus<NeoGrbFeature, NeoEsp32Rmt0Ws2812xMethod> strip(LED_COUNT, LED_PIN); //Nuevo v.1
-//NeoPixelBus<NeoGrbFeature, NeoEsp32I2s1800KbpsMethod> strip(LED_COUNT, LED_PIN); //Nuevo v.2
-
-
 
 // Camera model selection (ESP-EYE / Timer Camera F)
 #define CAMERA_MODEL_ESP_EYE
@@ -68,49 +43,8 @@ static bool debug_nn = false;
 static bool is_initialised = false;
 
 // Buffer estático para evitar malloc repetido
-//static uint8_t snapshot_buf[EI_CAMERA_RAW_FRAME_BUFFER_COLS * EI_CAMERA_RAW_FRAME_BUFFER_ROWS * EI_CAMERA_FRAME_BYTE_SIZE]; //Inicial
-//static uint8_t *snapshot_buf = (uint8_t*)ps_malloc(EI_CAMERA_RAW_FRAME_BUFFER_COLS * EI_CAMERA_RAW_FRAME_BUFFER_ROWS * EI_CAMERA_FRAME_BYTE_SIZE); //Nuevo v.1
-static uint8_t *snapshot_buf = (uint8_t*)malloc(EI_CAMERA_RAW_FRAME_BUFFER_COLS * EI_CAMERA_RAW_FRAME_BUFFER_ROWS * EI_CAMERA_FRAME_BYTE_SIZE); //Nuevo v.2
+static uint8_t *snapshot_buf = (uint8_t*)malloc(EI_CAMERA_RAW_FRAME_BUFFER_COLS * EI_CAMERA_RAW_FRAME_BUFFER_ROWS * EI_CAMERA_FRAME_BYTE_SIZE); 
 
-
-/*
-//Inicial
-static camera_config_t camera_config = {
-    .pin_pwdn = PWDN_GPIO_NUM,
-    .pin_reset = RESET_GPIO_NUM,
-    .pin_xclk = XCLK_GPIO_NUM,
-    .pin_sscb_sda = SIOD_GPIO_NUM,
-    .pin_sscb_scl = SIOC_GPIO_NUM,
-
-    .pin_d7 = Y9_GPIO_NUM,
-    .pin_d6 = Y8_GPIO_NUM,
-    .pin_d5 = Y7_GPIO_NUM,
-    .pin_d4 = Y6_GPIO_NUM,
-    .pin_d3 = Y5_GPIO_NUM,
-    .pin_d2 = Y4_GPIO_NUM,
-    .pin_d1 = Y3_GPIO_NUM,
-    .pin_d0 = Y2_GPIO_NUM,
-    .pin_vsync = VSYNC_GPIO_NUM,
-    .pin_href = HREF_GPIO_NUM,
-    .pin_pclk = PCLK_GPIO_NUM,
-
-    .xclk_freq_hz = 20000000,
-    .ledc_timer = LEDC_TIMER_0,
-    .ledc_channel = LEDC_CHANNEL_0,
-    //.pixel_format = PIXFORMAT_JPEG, //Inicial
-    .pixel_format = PIXFORMAT_RGB565 //Nuevo
-
-    //.frame_size = FRAMESIZE_QVGA, //Inicial
-    .frame_size = FRAMESIZE_QQVGA, // 160x120 //Nuevo
-    //.jpeg_quality = 12, //Inicial
-    .jpeg_quality = 8, //Nuevo
-    .fb_count = 1,
-    .fb_location = CAMERA_FB_IN_PSRAM,
-    .grab_mode = CAMERA_GRAB_WHEN_EMPTY,
-};
-*/
-
-//Nuevo
 static camera_config_t camera_config = {
     .pin_pwdn       = PWDN_GPIO_NUM,
     .pin_reset      = RESET_GPIO_NUM,
@@ -134,11 +68,11 @@ static camera_config_t camera_config = {
     .ledc_timer     = LEDC_TIMER_0,
     .ledc_channel   = LEDC_CHANNEL_0,
 
-    .pixel_format   = PIXFORMAT_RGB565,   // ← CORRECTO
-    .frame_size     = FRAMESIZE_QQVGA,    // ← CORRECTO
+    .pixel_format   = PIXFORMAT_RGB565,   
+    .frame_size     = FRAMESIZE_QQVGA,  
     .jpeg_quality   = 12,
     .fb_count       = 1,
-    .fb_location    = CAMERA_FB_IN_DRAM,  // ← RECOMENDADO PARA EVITAR fb NULL
+    .fb_location    = CAMERA_FB_IN_DRAM,  
     .grab_mode      = CAMERA_GRAB_WHEN_EMPTY
 };
 
@@ -148,53 +82,12 @@ bool ei_camera_init(void);
 bool ei_camera_capture(uint32_t img_width, uint32_t img_height, uint8_t *out_buf);
 static int ei_camera_get_data(size_t offset, size_t length, float *out_ptr);
 
- /*
-//Fast LED
-void setup() {
-    Serial.begin(115200);
-    while (!Serial) { delay(10); }
-
-    Serial.println("Inicializando LED y cámara...");
-
-    // Inicializar LED con FastLED //Inicial
-    FastLED.addLeds<WS2812, LED_PIN, GRB>(leds, LED_COUNT);
-    FastLED.setBrightness(80);
-    //leds[0] = CRGB::Blue; //Inicial
-    noInterrupts(); //Nuevo
-    FastLED.show();
-    interrupts(); //Nuevo
-    //delay(300); //Inicial
-
-    // Inicializar cámara
-    if (!ei_camera_init()) {
-        Serial.println("Error inicializando cámara");
-        while (1) { delay(1000); }
-    }
-
-    Serial.println("Sistema listo. Iniciando inferencia...");
-    delay(500);
-
-    //Comprobar si se devolvió NULL //Nuevo
-    if (!snapshot_buf) { 
-    Serial.println("ERROR: No hay PSRAM disponible");
-    while(1);
-}
-*/
-
-//NeoPixelBus
 void setup() { 
   Serial.begin(115200); 
-  pinMode(LED_PIN, OUTPUT); //Nuevo v.2 + v.3
-  pinMode(4, OUTPUT); //Estela
-  //pinMode(13, OUTPUT); //Estela
-  //digitalWrite(LED_PIN, LOW); // LED apagado al inicio //Nuevo v.3
+  pinMode(LED_PIN, OUTPUT); 
+  pinMode(4, OUTPUT); 
   delay(3000); // 3 segundos para que te dé tiempo a abrir el monitor
 
-  //strip.Begin(); //Nuevo v.2 + v.3
-  //strip.SetPixelColor(0, RgbColor(0, 0, 0)); //Nuevo v.2 + v.3
-  //strip.Show(); //Nuevo v.2 + v.3
-
-  //Nuevo
   if (!ei_camera_init()) {
     Serial.println("Fallo en ei_camera_init()");
   } 
