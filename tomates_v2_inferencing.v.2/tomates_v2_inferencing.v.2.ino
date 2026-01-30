@@ -99,7 +99,6 @@ void setup() {
 
 
 void loop() {
-    //Nuevo
     Serial.println("Loop vivo");
     delay(500);
 
@@ -125,43 +124,6 @@ void loop() {
         return;
     }
 
-    /*
-    //Inicial
-    // Leer confidencias
-    float maduro_conf = 0.0f;
-    float no_maduro_conf = 0.0f;
-
-    for (int i = 0; i < EI_CLASSIFIER_LABEL_COUNT; i++) {
-        Serial.printf("%s: %.5f\n", ei_classifier_inferencing_categories[i], result.classification[i].value);
-        if (strcmp(ei_classifier_inferencing_categories[i], "maduro") == 0) {
-            maduro_conf = result.classification[i].value;
-        } else if (strcmp(ei_classifier_inferencing_categories[i], "no_maduro") == 0) {
-            no_maduro_conf = result.classification[i].value;
-        }
-    }
-    */
-
-    /*
-    //Nuevo v.4
-    float maduro_conf = 0.0f;
-    float no_maduro_conf = 0.0f;
-
-    for (int i = 0; i < EI_CLASSIFIER_LABEL_COUNT; i++) {
-      const char* label = ei_classifier_inferencing_categories[i];
-      float value = result.classification[i].value;
-
-      Serial.printf("%s: %.5f\n", label, value);
-
-      if (strstr(label, "maduro") != NULL) {
-        maduro_conf = value;
-      }
-      if (strstr(label, "no") != NULL || strstr(label, "verde") != NULL) {
-        no_maduro_conf = value;
-      }
-    }
-    */
-
-    //Nuevo v.5
     float maduro_conf = 0.0f;
     float no_maduro_conf = 0.0f;
     
@@ -188,38 +150,7 @@ Serial.printf("no_maduro_conf final = %.5f\n", no_maduro_conf);
     // Umbral y control LED
     const float UMBRAL = 0.70f;
 
-    /*
-    //Prueba
-    float maduro_conf = 0.0f;
-    float no_maduro_conf = 0.8f;
-    */
-
-    /*
-    //NeoPixelBus
-    if (maduro_conf >= UMBRAL) {
-        //leds[0] = CRGB::Red; //FastLED
-        strip.SetPixelColor(0, RgbColor(255, 0, 0)); //NeoPixelBus
-    } else if (no_maduro_conf >= UMBRAL) {
-        //leds[0] = CRGB::Green; //FastLED
-        strip.SetPixelColor(0, RgbColor(0, 255, 0)); //NeoPixelBus
-    } else {
-        //leds[0] = CRGB::Blue; //FastLED
-        strip.SetPixelColor(0, RgbColor(0, 0, 255)); //NeoPixelBus
-    }
-    */
-
-    /*
-    //LED simple
-    if (maduro_conf >= UMBRAL) { 
-      digitalWrite(LED_PIN, HIGH); // LED encendido → tomate maduro 
-      //digitalWrite(13, HIGH); // LED encendido → tomate maduro //Estela
-    } 
-    else { 
-      digitalWrite(LED_PIN, LOW); // LED apagado → no maduro o incierto 
-      //digitalWrite(13, LOW); // LED apagado → no maduro o incierto //Estela
-    */
-
-    //LED semáforo //Estela
+    //LED semáforo 
     if (maduro_conf >= UMBRAL) {
         digitalWrite(LED_PIN, LOW);
         digitalWrite(4, HIGH);
@@ -230,10 +161,6 @@ Serial.printf("no_maduro_conf final = %.5f\n", no_maduro_conf);
         digitalWrite(LED_PIN, LOW);
         digitalWrite(4, LOW);
     }
-
-    // Mostrar LED (FastLED maneja la temporización)
-    //FastLED.show(); //Inicial //FastLED
-    //strip.Show(); //NeoPixelBus
 
     // Pequeña pausa para evitar saturar la cámara/CPU
     delay(200);
@@ -276,8 +203,7 @@ bool ei_camera_capture(uint32_t img_width, uint32_t img_height, uint8_t *out_buf
     }
 
     // Convertir a RGB888 en snapshot_buf (ya reservado)
-    //bool converted = fmt2rgb888(fb->buf, fb->len, PIXFORMAT_JPEG, snapshot_buf); //Inicial
-    bool converted = fmt2rgb888(fb->buf, fb->len, PIXFORMAT_RGB565, snapshot_buf); //Nuevo
+    bool converted = fmt2rgb888(fb->buf, fb->len, PIXFORMAT_RGB565, snapshot_buf); 
 
     esp_camera_fb_return(fb);
 
